@@ -1,21 +1,31 @@
 ﻿using CryptSharp;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class LoginPanel : MonoBehaviour
+public class LoginPanel : IPanel
 {
+    public delegate void UserDelegate(string name); //Will change to a with 
+
+    [SerializeField]
+    private LoggedInPanel m_LoggedInPanel;
+
+    [Space(5)]
     [Header ("URL's")]
     [SerializeField]
     private string m_LoginCheckURL;
 
     [SerializeField]
-    private string m_RegisterURL;
+    private string m_RegisterURL; 
 
     [Space(5)]
     [Header("Required references")]
+    [SerializeField]
+    private Text m_ErrorText;
+
     [SerializeField]
     private InputField m_NameInputField;
 
@@ -24,7 +34,26 @@ public class LoginPanel : MonoBehaviour
 
     private string m_SecretKey = "afzlearvtoyuurimpeqlsddkfagmhejrk"; //flavourmeldkamer with salt in between
 
-    public void Login()
+    //Events
+    public event UserDelegate LoginEvent;
+    public event UserDelegate RegisterEvent;
+
+    private void Awake()
+    {
+        Show();
+    }
+
+    private void Start()
+    {
+        m_LoggedInPanel.LogoutEvent += OnLogout;
+    }
+
+    private void OnDestroy()
+    {
+        m_LoggedInPanel.LogoutEvent -= OnLogout;
+    }
+
+    private void Login()
     {
         string name = m_NameInputField.text;
         string password = m_PasswordInputField.text;
@@ -32,7 +61,7 @@ public class LoginPanel : MonoBehaviour
         StartCoroutine(LoginCheckRoutine(name, password));
     }
 
-    public void Register()
+    private void Register()
     {
         string name = m_NameInputField.text;
         string password = m_PasswordInputField.text;
@@ -56,7 +85,17 @@ public class LoginPanel : MonoBehaviour
         else
         {
             string response = loginCheckPost.text;
-            Debug.Log("Login response: " + response);
+            if (response != "")
+            {
+                m_ErrorText.text = response;
+            }
+            else
+            {
+                if (LoginEvent != null)
+                    LoginEvent(name);
+
+                Hide();
+            }
         }
     }
 
@@ -76,7 +115,15 @@ public class LoginPanel : MonoBehaviour
         else
         {
             string response = registerPost.text;
-            Debug.Log("Register response: " + response);
+            if (response != "")
+            {
+                m_ErrorText.text = response;
+            }
+            else
+            {
+                if (RegisterEvent != null)
+                    RegisterEvent(name);
+            }
         }
     }
 
@@ -122,5 +169,20 @@ public class LoginPanel : MonoBehaviour
                                                     { CrypterOption.Rounds, 10 }
                                                 }
                                                 */
+    }
+
+    //IPanel
+    public override void Show()
+    {
+        base.Show();
+        m_ErrorText.text = "";
+        m_NameInputField.text = "";
+        m_PasswordInputField.text = "";
+    }
+
+    //Events
+    private void OnLogout()
+    {
+        Show();
     }
 }
