@@ -21,7 +21,7 @@ namespace Mapbox.MeshGeneration.Components
             Transform = transform;
             GameObject = gameObject;
             Data = feature;
-            DataString = string.Join(" \r\n ", Data.Properties.Select(x => x.Key + " - " + x.Value.ToString()).ToArray());
+            DataString = string.Join(" \r\n ", Data.Properties.Select(x => x.Key + " " + x.Value.ToString()).ToArray());
         }
     }
 }

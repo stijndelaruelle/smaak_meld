@@ -74,27 +74,27 @@ public static class ExtentionMethods
         StringBuilder stringBuilder = new StringBuilder();
 
         stringBuilder.Append("#\n");
-        stringBuilder.Append("# " + meshFilter.name + " vertices\n");
+        stringBuilder.Append("# " + meshFilter.name + "\n");
         stringBuilder.Append("#\n\n");
 
         //Vertices
         foreach (Vector3 v in mesh.vertices)
         {
-            stringBuilder.Append(string.Format("v {0} {1} {2}\n", v.x, v.y, v.z));
+            stringBuilder.Append(string.Format("v {0} {1} {2}\n", -v.x, v.y, v.z)); //- because Unity is "differently handed"
         }
         stringBuilder.Append("# " + mesh.vertices.Length + " vertices\n\n");
 
         //Normals
-        foreach (Vector3 v in mesh.normals)
+        foreach (Vector3 vn in mesh.normals)
         {
-            stringBuilder.Append(string.Format("vn {0} {1} {2}\n", v.x, v.y, v.z));
+            stringBuilder.Append(string.Format("vn {0} {1} {2}\n", vn.x, vn.y, vn.z));
         }
         stringBuilder.Append("# " + mesh.normals.Length + " normals\n\n");
 
         //UV Coorindates
-        foreach (Vector3 v in mesh.uv)
+        foreach (Vector3 uv in mesh.uv)
         {
-            stringBuilder.Append(string.Format("vt {0} {1}\n", v.x, v.y));
+            stringBuilder.Append(string.Format("vt {0} {1}\n", uv.x, uv.y));
         }
         stringBuilder.Append("# " + mesh.uv.Length + " texture coords\n\n");
 
@@ -112,7 +112,7 @@ public static class ExtentionMethods
             int[] triangles = mesh.GetTriangles(subMeshID);
             for (int i = 0; i < triangles.Length; i += 3)
             {
-                stringBuilder.Append(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}\n",
+                stringBuilder.Append(string.Format("f {1}/{1}/{1} {0}/{0}/{0} {2}/{2}/{2}\n",
                     triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
             }
 
