@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class LoggedInPanel : IPanel
 {
     [SerializeField]
-    private LoginPanel m_LoginPanel;
+    private Session m_Session;
 
     [Space(5)]
     [Header("Required references")]
     [SerializeField]
     private Text m_Text;
-
-    public event Action LogoutEvent;
 
     private void Awake()
     {
@@ -23,20 +18,19 @@ public class LoggedInPanel : IPanel
 
     private void Start()
     {
-        m_LoginPanel.LoginEvent += OnLogin;
+        m_Session.LoginEvent += OnLogin;
+        m_Session.LogoutEvent += OnLogout;
     }
 
     private void OnDestroy()
     {
-        m_LoginPanel.LoginEvent -= OnLogin;
+        m_Session.LoginEvent -= OnLogin;
+        m_Session.LogoutEvent -= OnLogout;
     }
 
     public void Logout()
     {
-        if (LogoutEvent != null)
-            LogoutEvent();
-
-        Hide();
+        m_Session.Logout();
     }
 
     //Events
@@ -44,5 +38,10 @@ public class LoggedInPanel : IPanel
     {
         m_Text.text = "Logged in as " + userName;
         Show();
+    }
+
+    private void OnLogout()
+    {
+        Hide();
     }
 }
