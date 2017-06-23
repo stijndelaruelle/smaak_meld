@@ -27,8 +27,8 @@ internal sealed class CustomAssetImporter : AssetPostprocessor
         modelImporter.importMaterials = false;
 
         modelImporter.globalScale = 1;
-
-        modelImporter.optimizeMesh = true;  //This lets Unity get rid of any unused mesh data (bones, vertex colors etc.) on build
+        modelImporter.meshCompression = ModelImporterMeshCompression.Off;
+        modelImporter.optimizeMesh = true; //This lets Unity get rid of any unused mesh data (bones, vertex colors etc.) on build
         //modelImporter.generateSecondaryUV = true; //Generates lightmap uvs, comment out if you don't use lightmapping OR you provide your own lightmap/second uvs.
     }
 

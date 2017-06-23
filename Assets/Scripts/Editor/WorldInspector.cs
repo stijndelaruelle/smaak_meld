@@ -10,9 +10,16 @@ public class WorldInspector : Editor
         DrawDefaultInspector();
 
         World world = (World)target;
+
+        GUILayout.Space(20);
+        GUILayout.Label("Waypoints");
+
+        if (GUILayout.Button("Generate waypoints"))
+            world.GenerateWaypoints();
+
+        GUILayout.Space(20);
+
         if (GUILayout.Button("Serialize"))
-        {
             world.Serialize();
-        }
     }
 }

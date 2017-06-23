@@ -29,17 +29,27 @@ namespace Mapbox.MeshGeneration
         [SerializeField]
         private World m_WorldRootPrefab;
 
-        public void Awake()
-		{
-			_fileSource = MapboxConvenience.Instance.FileSource;
-			MapVisualization.Initialize(this, _fileSource);
-			_tiles = new Dictionary<Vector2, UnityTile>();
-		}
+        //Original
+        //public void Awake()
+		//{
+		//	_fileSource = MapboxConvenience.Instance.FileSource;
+		//	MapVisualization.Initialize(this, _fileSource);
+		//	_tiles = new Dictionary<Vector2, UnityTile>();
+		//}
 
-		public void Start()
-		{
-			Execute();
-		}
+		//public void Start()
+		//{
+		//	Execute();
+		//}
+
+        //Called by an editor button
+        public void GenerateMap()
+        {
+            _fileSource = MapboxConvenience.Instance.FileSource;
+            MapVisualization.Initialize(this, _fileSource);
+            _tiles = new Dictionary<Vector2, UnityTile>();
+            Execute();  
+        }
 
         public void Update()
         {

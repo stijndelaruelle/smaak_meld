@@ -12,14 +12,28 @@ public class World : MonoBehaviour
     private DirectoryInfo m_RootDirectoryInfo;
 
     [SerializeField]
+    private Waypoint m_WaypointPrefab;
+
+    [SerializeField]
+    private List<Waypoint> m_Waypoints;
+
+    [SerializeField]
     private string m_PrefabName;
-
-    //[SerializeField]
     private string m_MeshFolder = "Meshes";
-
-    //[SerializeField]
     private string m_TextureFolder = "Textures";
 
+    public void GenerateWaypoints()
+    {
+        m_Waypoints = new List<Waypoint>();
+        //Loop trough all the mesh roads
+        Road[] roads = transform.GetComponentsInChildren<Road>();
+        foreach (Road road in roads)
+        {
+            road.GenerateWaypoints(m_Waypoints, m_WaypointPrefab);
+        }
+    }
+
+    //Serialization
     public void Serialize()
     {
         #if UNITY_EDITOR
@@ -43,6 +57,7 @@ public class World : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+
     private void SerializeMeshFilters()
     {
         DirectoryInfo directoryInfo = ExtentionMethods.FindOrCreateDirectory(m_RootDirectoryInfo, m_MeshFolder);
