@@ -1,33 +1,48 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using UnityEditor;
 using UnityEngine;
+
+#if UNITY_EDITOR
+    using UnityEditor;
+#endif
 
 public class World : MonoBehaviour
 {
-    [SerializeField]
-    private string m_RootFolder;
     private DirectoryInfo m_RootDirectoryInfo;
 
     [SerializeField]
-    private string m_MeshFolder;
+    private string m_PrefabName;
 
-    [SerializeField]
-    private string m_TextureFolder;
+    //[SerializeField]
+    private string m_MeshFolder = "Meshes";
+
+    //[SerializeField]
+    private string m_TextureFolder = "Textures";
 
     public void Serialize()
     {
-        m_RootDirectoryInfo = new DirectoryInfo(m_RootFolder);
+        #if UNITY_EDITOR
 
+            //Make the user select a folder
+            string rootFolderPath = EditorUtility.SaveFolderPanel("Select a folder to save this map to", Application.dataPath, "");
+            if (rootFolderPath.Length <= 0)
+                return;
 
-        //SAVE ALL THE MESHES
-        SerializeMeshFilters();
+            m_RootDirectoryInfo = new DirectoryInfo(rootFolderPath);
 
-        //SAVE ALL THE MATERIALS & TEXTURES
-        SerializeMeshRenderers();
+            //Save & reassign all the meshes
+            SerializeMeshFilters();
+
+            //Save and reassign all the materials & textures
+            SerializeMeshRenderers();
+
+            //Save the prefab
+            CreatePrefab();
+        #endif
     }
 
+#if UNITY_EDITOR
     private void SerializeMeshFilters()
     {
         DirectoryInfo directoryInfo = ExtentionMethods.FindOrCreateDirectory(m_RootDirectoryInfo, m_MeshFolder);
@@ -39,6 +54,7 @@ public class World : MonoBehaviour
         MeshFilter[] meshFilters = transform.GetComponentsInChildren<MeshFilter>();
         foreach (MeshFilter meshFilter in meshFilters)
         {
+            //Save mesh to OBJ
             string fileName = ExtentionMethods.FindUniqueFileName(directoryInfo,
                                                                   meshFilter.gameObject.name + ".obj",
                                                                   extraUsedNames);
@@ -49,9 +65,11 @@ public class World : MonoBehaviour
             int index = filePath.IndexOf("Assets");
             string assetRelativePath = filePath.Substring(index);
 
-            AssetDatabase.ImportAsset(assetRelativePath);
-            Mesh newMesh = AssetDatabase.LoadAssetAtPath<Mesh>(assetRelativePath);
+            //Load the model as an asset in Unity for further use.
+            UnityEditor.AssetDatabase.ImportAsset(assetRelativePath);
 
+            //Assign newly saved mesh to the mesh filter
+            Mesh newMesh = UnityEditor.AssetDatabase.LoadAssetAtPath<Mesh>(assetRelativePath);
             meshFilter.mesh = newMesh;
 
             extraUsedNames.Add(fileName);
@@ -69,7 +87,7 @@ public class World : MonoBehaviour
         MeshRenderer[] meshRenderers = transform.GetComponentsInChildren<MeshRenderer>();
         foreach (MeshRenderer meshRenderer in meshRenderers)
         {
-            //Only tile renderers need saving (LAME find better way of filtering)
+            //Only tile renderers need saving (LAME: find better way of filtering)
             if (meshRenderer.gameObject.name.Contains("Tile") == false)
                 continue;
 
@@ -80,9 +98,9 @@ public class World : MonoBehaviour
             {
                 Texture2D texture = (Texture2D)materials[i].mainTexture;
 
-                //Save the main texture
                 if (texture != null)
                 {
+                    //Save the main texture to PNG
                     string textureFileName = ExtentionMethods.FindUniqueFileName(directoryInfo,
                                              meshRenderer.gameObject.name + " material " + i + " mainTexture.png",
                                              extraUsedNames);
@@ -94,12 +112,15 @@ public class World : MonoBehaviour
 
                     string assetRelativeTexturePath = textureFilePath.Substring(textureFilePath.IndexOf("Assets"));
 
-                    AssetDatabase.ImportAsset(assetRelativeTexturePath);
-                    Texture2D newTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(assetRelativeTexturePath);
+                    //Load the texture as an asset in Unity for further use.
+                    UnityEditor.AssetDatabase.ImportAsset(assetRelativeTexturePath);
 
+                    //Assign newly saved texture to the mesh renderer
+                    Texture2D newTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(assetRelativeTexturePath);
                     materials[i].mainTexture = newTexture;
                 }
 
+                //Create an asset for the material itself
                 string fileName = ExtentionMethods.FindUniqueFileName(directoryInfo,
                                   meshRenderer.gameObject.name + " material " + i + ".mat",
                                   extraUsedNames);
@@ -107,19 +128,32 @@ public class World : MonoBehaviour
                 string filePath = pathName + fileName;
                 string assetRelativePath = filePath.Substring(filePath.IndexOf("Assets"));
 
-                AssetDatabase.CreateAsset(materials[i], assetRelativePath);
-                AssetDatabase.SaveAssets();
+                UnityEditor.AssetDatabase.CreateAsset(materials[i], assetRelativePath);
+                UnityEditor.AssetDatabase.SaveAssets();
 
-                AssetDatabase.ImportAsset(assetRelativePath);
-                Material newMaterial = AssetDatabase.LoadAssetAtPath<Material>(assetRelativePath);
+                //Assign newly saved material to the mesh renderer
+                UnityEditor.AssetDatabase.ImportAsset(assetRelativePath);
+                Material newMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(assetRelativePath);
 
                 materials[i] = newMaterial;
             }
         }
     }
 
-    private void SerializeMaterial()
+    private void CreatePrefab()
     {
+        //Change the name of this object
+        this.gameObject.name = m_PrefabName;
 
+        //Save it as a prefab
+        string pathName = m_RootDirectoryInfo.FullName + Path.DirectorySeparatorChar;
+
+        string filePath = pathName + m_PrefabName + ".prefab";
+        string assetRelativePath = filePath.Substring(filePath.IndexOf("Assets"));
+        assetRelativePath = assetRelativePath.Replace("\\", "/"); //Why? http://answers.unity3d.com/questions/1136969/prefabutilitycreateprefab-results-in-not-a-valid-a.html
+
+        PrefabUtility.CreatePrefab(assetRelativePath, this.gameObject);
     }
+
+#endif
 }
