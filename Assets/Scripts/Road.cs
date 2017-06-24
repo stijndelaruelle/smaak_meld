@@ -106,8 +106,9 @@ public class Road : MonoBehaviour
 
         //Spawn a waypoint at the average
         Waypoint newWaypoint = GameObject.Instantiate(waypointPrefab, average, Quaternion.identity, this.transform) as Waypoint;
-        waypointList.Add(newWaypoint);
+        newWaypoint.name = "Waypoint " + waypointList.Count + " (" + gameObject.name + ")";
 
+        waypointList.Add(newWaypoint);
         return newWaypoint;
     }
 
@@ -117,8 +118,8 @@ public class Road : MonoBehaviour
         for (int i = 0; i < m_Waypoints.Count - 1; ++i)
         {
             //Link both ways.
-            m_Waypoints[i].AddNeightbour(m_Waypoints[i + 1]);
-            m_Waypoints[i + 1].AddNeightbour(m_Waypoints[i]);
+            m_Waypoints[i].AddNeighbour(m_Waypoints[i + 1]);
+            m_Waypoints[i + 1].AddNeighbour(m_Waypoints[i]);
         }
     }
 
@@ -169,8 +170,8 @@ public class Road : MonoBehaviour
             //Unless we already were neighbours.
             if (currentWaypoint.IsNeighbour(closestWaypoint) == false)
             {
-                currentWaypoint.AddNeightbour(closestWaypoint);
-                closestWaypoint.AddNeightbour(currentWaypoint);
+                currentWaypoint.AddNeighbour(closestWaypoint);
+                closestWaypoint.AddNeighbour(currentWaypoint);
             }
         }
     }
