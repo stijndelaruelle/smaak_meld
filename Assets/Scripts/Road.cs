@@ -13,24 +13,33 @@ public class Road : MonoBehaviour
     private bool m_Debug = false;
     private Mesh m_Mesh;
 
-    public void GenerateWaypoints(List<Waypoint> waypointList, Waypoint waypointPrefab)
+    //Temporary cache (during serialization) of all our waypoints. Don't use this at runtime
+    private List<Waypoint> m_Waypoints;
+
+    //Generating
+    public void GenerateWaypoints(Waypoint waypointPrefab)
     {
         m_Mesh = GetComponent<MeshFilter>().sharedMesh;
+
+        if (m_Waypoints != null)
+            m_Waypoints.Clear();
+        else
+            m_Waypoints = new List<Waypoint>();
 
         //Runtime generated
         if (m_Mesh.name == "New Game Object")
         {
-            GenerateWaypointsPreSerialization(waypointList, waypointPrefab);
+            GenerateWaypointsPreSerialization(waypointPrefab, m_Waypoints);
         }
 
         //From OBJ
         else
         {
-            GenerateWaypointsPostSerialization(waypointList, waypointPrefab);
+            GenerateWaypointsPostSerialization(waypointPrefab, m_Waypoints);
         }
     }
 
-    public void GenerateWaypointsPreSerialization(List<Waypoint> waypointList, Waypoint waypointPrefab)
+    public void GenerateWaypointsPreSerialization(Waypoint waypointPrefab, List<Waypoint> waypointList)
     {
         m_Mesh = GetComponent<MeshFilter>().sharedMesh;
 
@@ -48,19 +57,17 @@ public class Road : MonoBehaviour
         Waypoint newWaypoint = null;
         for (int i = 0; i < indices.Length; i += 6)
         {
-            newWaypoint = SpawnWaypoint(vertices[indices[i + 2]], vertices[indices[i + 0]], waypointPrefab);
-            waypointList.Add(newWaypoint);
+            newWaypoint = SpawnWaypoint(vertices[indices[i + 2]], vertices[indices[i + 0]], waypointPrefab, waypointList);
         }
 
         //Last waypoint at the end of the mesh
         Vector3 thirdLastVertexPosition = vertices[indices[indices.Length - 3]];
         Vector3 secondLastVertexPosition = vertices[indices[indices.Length - 2]];
 
-        newWaypoint = SpawnWaypoint(thirdLastVertexPosition, secondLastVertexPosition, waypointPrefab);
-        waypointList.Add(newWaypoint);
+        newWaypoint = SpawnWaypoint(thirdLastVertexPosition, secondLastVertexPosition, waypointPrefab, waypointList);
     }
 
-    public void GenerateWaypointsPostSerialization(List<Waypoint> waypointList, Waypoint waypointPrefab)
+    public void GenerateWaypointsPostSerialization(Waypoint waypointPrefab, List<Waypoint> waypointList)
     {
         m_Mesh = GetComponent<MeshFilter>().sharedMesh;
 
@@ -78,19 +85,17 @@ public class Road : MonoBehaviour
         Waypoint newWaypoint = null;
         for (int i = 0; i < indices.Length; i += 6)
         {
-            newWaypoint = SpawnWaypoint(vertices[indices[i + 1]], vertices[indices[i + 2]], waypointPrefab);
-            waypointList.Add(newWaypoint);
+            newWaypoint = SpawnWaypoint(vertices[indices[i + 1]], vertices[indices[i + 2]], waypointPrefab, waypointList);
         }
 
         //Last waypoint at the end of the mesh
         Vector3 thirdLastVertexPosition = vertices[indices[indices.Length - 3]];
         Vector3 lastVertexPosition = vertices[indices[indices.Length - 1]];
 
-        newWaypoint = SpawnWaypoint(thirdLastVertexPosition, lastVertexPosition, waypointPrefab);
-        waypointList.Add(newWaypoint);
+        newWaypoint = SpawnWaypoint(thirdLastVertexPosition, lastVertexPosition, waypointPrefab, waypointList);
     }
 
-    private Waypoint SpawnWaypoint(Vector3 vertex1, Vector3 vertex2, Waypoint waypointPrefab)
+    private Waypoint SpawnWaypoint(Vector3 vertex1, Vector3 vertex2, Waypoint waypointPrefab, List<Waypoint> waypointList)
     {
         //Get the world space of these 2 vertices
         Vector3 position1 = transform.TransformPoint(vertex1);
@@ -100,7 +105,80 @@ public class Road : MonoBehaviour
         Vector3 average = (position1 + position2) / 2.0f;
 
         //Spawn a waypoint at the average
-        return GameObject.Instantiate(waypointPrefab, average, Quaternion.identity, this.transform) as Waypoint;
+        Waypoint newWaypoint = GameObject.Instantiate(waypointPrefab, average, Quaternion.identity, this.transform) as Waypoint;
+        waypointList.Add(newWaypoint);
+
+        return newWaypoint;
+    }
+
+    //Linking
+    public void LinkWaypoints()
+    {
+        for (int i = 0; i < m_Waypoints.Count - 1; ++i)
+        {
+            //Link both ways.
+            m_Waypoints[i].AddNeightbour(m_Waypoints[i + 1]);
+            m_Waypoints[i + 1].AddNeightbour(m_Waypoints[i]);
+        }
+    }
+
+    public void LinkRoads()
+    {
+        //For both the first and last waypoint:
+        //Look for the nearest waypoint that it not yet linked with within a certain range.
+        LinkWaypointWithNearest(m_Waypoints[0]);
+        LinkWaypointWithNearest(m_Waypoints[m_Waypoints.Count - 1]);
+    }
+
+    private void LinkWaypointWithNearest(Waypoint currentWaypoint)
+    {
+        Vector3 waypointPosition = currentWaypoint.transform.position;
+        Collider[] colliders = Physics.OverlapSphere(waypointPosition, 2.0f);
+
+        Waypoint closestWaypoint = null;
+        float closestDistance = float.MaxValue;
+
+        for (int i = 0; i < colliders.Length; ++i)
+        {
+            Waypoint testingWaypoint = colliders[i].GetComponent<Waypoint>();
+
+            //Check if this object has is a waypoint
+            if (testingWaypoint == null)
+                continue;
+
+            //Check if we're not comparing with ourselves
+            if (currentWaypoint == testingWaypoint)
+                continue;
+
+            //make sure the waypoint isn't part of the same road as ours
+            if (m_Waypoints.Contains(testingWaypoint))
+                continue;
+
+            //Do the distance check
+            float sqDistance = (testingWaypoint.transform.position - waypointPosition).sqrMagnitude;
+            if (sqDistance < closestDistance)
+            {
+                closestWaypoint = testingWaypoint;
+                closestDistance = sqDistance;
+            }
+        }
+
+        //They are now neighbours!
+        if (closestWaypoint != null)
+        {
+            //Unless we already were neighbours.
+            if (currentWaypoint.IsNeighbour(closestWaypoint) == false)
+            {
+                currentWaypoint.AddNeightbour(closestWaypoint);
+                closestWaypoint.AddNeightbour(currentWaypoint);
+            }
+        }
+    }
+
+    //Cleanup
+    private void RemoveWaypointColliders()
+    {
+
     }
 
 #if UNITY_EDITOR
