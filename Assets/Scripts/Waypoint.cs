@@ -118,6 +118,7 @@ public class Waypoint : MonoBehaviour
         if (otherWaypoint == null)
             return false;
 
-        return (this.Position == otherWaypoint.Position);
+        return (this.Position == otherWaypoint.Position &&
+                this.m_Neighbours == otherWaypoint.m_Neighbours);
     }
 }
