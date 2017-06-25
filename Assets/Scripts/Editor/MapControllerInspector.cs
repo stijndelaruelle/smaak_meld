@@ -16,7 +16,7 @@ public class MapControllerInspector : Editor
 
 
         Color origColor = GUI.backgroundColor;
-        GUI.backgroundColor = new Color(0.52f, 0.83f, 0.90f);
+        GUI.backgroundColor = new Color(0.64f, 0.90f, 0.52f);
 
         if (GUILayout.Button("Generate map (Runtime only)", GUILayout.Height(35.0f)))
         {

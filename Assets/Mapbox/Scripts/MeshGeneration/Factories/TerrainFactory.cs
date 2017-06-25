@@ -136,7 +136,7 @@ namespace Mapbox.MeshGeneration.Factories
 			mesh.SetUVs(0, uvlist);
 			mesh.RecalculateNormals();
 			go.GetComponent<MeshFilter>().sharedMesh = mesh;
-			go.AddComponent<MeshCollider>();
+			//go.AddComponent<MeshCollider>(); //Stijn: We really don't need this
 			//go.layer = LayerMask.NameToLayer("terrain");
 		}
 
@@ -225,8 +225,8 @@ namespace Mapbox.MeshGeneration.Factories
 			mesh.RecalculateNormals();
 			tile.GetComponent<MeshFilter>().sharedMesh = mesh;
 			tile.GetComponent<MeshRenderer>().material = _flatTileMaterial;
-			tile.gameObject.AddComponent<MeshCollider>();
-		}
+			//tile.gameObject.AddComponent<MeshCollider>(); //Stijn: We really don't need this
+        }
 
 		private float GetHeightFromColor(Color c)
 		{

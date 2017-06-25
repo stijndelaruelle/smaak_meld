@@ -1,34 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.AI;
 
-public class Ambulance : MonoBehaviour
-{
-    [SerializeField]
-    private Waypoint m_CurrentWaypoint;
-
-    [SerializeField]
-    private Waypoint m_TargetWaypoint;
-
-    private AStar m_Path;
-
-    public void CalculatePath()
-    {
-        m_Path = new AStar();
-        m_Path.CalculatePath(m_CurrentWaypoint, m_TargetWaypoint);
-    }
-
-    #if UNITY_EDITOR
-    private void OnDrawGizmos()
-    {
-        if (m_Path != null)
-            m_Path.DrawPath();
-    }
-    #endif
-}
-
-public class AStar
+public class PathFinder
 {
     public class Node
     {
@@ -124,8 +97,18 @@ public class AStar
     private List<Node> m_ClosedList;
 
     private List<Waypoint> m_LastPath;
+    public List<Waypoint> LastPath
+    {
+        get { return m_LastPath; }
+    }
 
-    public AStar()
+    private float m_LastPathLength;
+    public float LastPathLength
+    {
+        get { return m_LastPathLength; }
+    }
+
+    public PathFinder()
     {
         m_OpenList = new List<Node>();
         m_ClosedList = new List<Node>();
@@ -142,19 +125,20 @@ public class AStar
 
         //Add start node to the open list
         m_OpenList.Add(startNode);
-        
+
         //Begin searching!
         Node currentNode = null;
         bool isRunning = true;
         while (isRunning)
         {
             //Find node in open list with lowest overal (F) value.
+            Node lastCurrentNode = currentNode;
             currentNode = FindOpenNodeWithLowestF();
             if (currentNode == null)
             {
                 //This should never happen, but you never know.
                 //(OpenList is empty and we didn't find a path!)
-                Debug.LogError("Something, somewhere, went terribly wrong!");
+                Debug.LogError("Something, somewhere, went terribly wrong! Last succesful Node: " + lastCurrentNode.ToString(), lastCurrentNode.Waypoint);
                 isRunning = false;
                 continue;
             }
@@ -219,17 +203,23 @@ public class AStar
 
     private void TracePath(Node finalNode)
     {
+        if (finalNode == null)
+            return;
+
+        m_LastPathLength = finalNode.G; //Works as long as we don't include factors other than distance in the G value
+
         m_LastPath.Clear();
         m_LastPath.Add(finalNode.Waypoint);
 
         Node parent = finalNode.Parent;
-       
+
         while (parent != null)
         {
             m_LastPath.Add(parent.Waypoint);
             parent = parent.Parent;
         }
 
+        m_LastPath.Reverse();
         Debug.Log("Path completed!");
     }
 
@@ -247,10 +237,10 @@ public class AStar
         Gizmos.color = Color.green;
 
         Vector3 offset = new Vector3(0, 1, 0);
-        for (int i = m_LastPath.Count - 1; i > 0; --i)
+        for (int i = 0; i < m_LastPath.Count - 1; ++i)
         {
-            Gizmos.DrawLine(m_LastPath[i].Position + offset, m_LastPath[i - 1].Position + offset);
-            //DrawArrow.GizmoLine(m_LastPath[i].Position + offset, m_LastPath[i - 1].Position + offset, 1.0f, 25, true);
+            Gizmos.DrawLine(m_LastPath[i].Position + offset, m_LastPath[i + 1].Position + offset);
+            //DrawArrow.GizmoLine(m_LastPath[i].Position + offset, m_LastPath[i + 1].Position + offset, 1.0f, 25, true);
         }
 
         Gizmos.color = originalColor;
