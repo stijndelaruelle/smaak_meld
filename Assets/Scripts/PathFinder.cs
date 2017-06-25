@@ -102,12 +102,6 @@ public class PathFinder
         get { return m_LastPath; }
     }
 
-    private float m_LastPathLength;
-    public float LastPathLength
-    {
-        get { return m_LastPathLength; }
-    }
-
     public PathFinder()
     {
         m_OpenList = new List<Node>();
@@ -138,7 +132,7 @@ public class PathFinder
             {
                 //This should never happen, but you never know.
                 //(OpenList is empty and we didn't find a path!)
-                Debug.LogError("Something, somewhere, went terribly wrong! Last succesful Node: " + lastCurrentNode.ToString(), lastCurrentNode.Waypoint);
+                Debug.LogError("No path found! Last checked Node: " + lastCurrentNode.ToString(), lastCurrentNode.Waypoint);
                 isRunning = false;
                 continue;
             }
@@ -205,8 +199,6 @@ public class PathFinder
     {
         if (finalNode == null)
             return;
-
-        m_LastPathLength = finalNode.G; //Works as long as we don't include factors other than distance in the G value
 
         m_LastPath.Clear();
         m_LastPath.Add(finalNode.Waypoint);
